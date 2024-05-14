@@ -63,8 +63,6 @@ Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "orange"] )
 Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan"  ]   )
 Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red"   ]     )         
 
-
-
 ##############################################################################
 #
 #  Debug : ne pas toucher (affichage des valeurs autours dans les cases
@@ -278,7 +276,6 @@ AfficherPage(0)
 #  Partie III :   Gestion de partie   -   placez votre code dans cette section
 #
 #########################################################################
-
       
 def PacManPossibleMove():
    L = []
@@ -322,25 +319,26 @@ def IAGhosts():
       choix = random.randrange(len(L))
       F[0] += L[choix][0]
       F[1] += L[choix][1]
-      
-  
- 
 
- 
 #  Boucle principale de votre jeu appelée toutes les 500ms
-
+pacManScore = 0
 iteration = 0
 def PlayOneTurn():
    global iteration
-   
+   global pacManScore
+
    if not PAUSE_FLAG : 
       iteration += 1
       if iteration % 2 == 0 :   IAPacman()
       else:                     IAGhosts()
    
-   Affiche(PacmanColor = "yellow", message = "message")  
- 
- 
+   if GUM[PacManPos[0]][PacManPos[1]] == 1: # si la pos du pacman est sur un pacgum
+      GUM[PacManPos[0]][PacManPos[1]] = 0
+      pacManScore = pacManScore + 100
+      ++
+   Affiche(PacmanColor = "yellow", message = "Score : "+str(pacManScore))  
+
+
 ###########################################:
 #  demarrage de la fenetre - ne pas toucher
 
