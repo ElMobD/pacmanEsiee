@@ -33,11 +33,20 @@ TBL = CreateArray([
         [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
         [1,0,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1,0,1],
         [1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] ]);
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] ])
 # attention, on utilise TBL[x][y] 
         
 HAUTEUR = TBL.shape [1]      
 LARGEUR = TBL.shape [0]  
+
+# Carte des distances
+
+caseDuParcours = np.count_nonzero(TBL != 1)
+CDD = np.zeros(TBL.shape,dtype=np.int32)
+CDD[TBL == 1] = 1000 # les murs sont à distance infinie
+CDD[TBL != 1] = caseDuParcours # les cases vides sont à distance max
+
+
 
 # placements des pacgums et des fantomes
 
@@ -48,11 +57,15 @@ def PlacementsGUM():  # placements des pacgums
       for y in range(HAUTEUR):
          if ( TBL[x][y] == 0):
             GUM[x][y] = 1
+         elif ( TBL[x][y] == 1):
+            GUM[x][y] = 5
    return GUM
             
 GUM = PlacementsGUM()   
-   
-   
+CDD[GUM == 1] = 0 # les pacgums sont à distance 0
+
+
+
       
 
 PacManPos = [5,5]
@@ -276,7 +289,15 @@ AfficherPage(0)
 #  Partie III :   Gestion de partie   -   placez votre code dans cette section
 #
 #########################################################################
-      
+
+def updateCDD():
+   for x in range(LARGEUR):
+      for y in range(HAUTEUR):
+         if (TBL[x][y] == 0):
+            minimal = min(CDD[x][y-1], CDD[x][y+1], CDD[x+1][y], CDD[x-1][y])
+            if (CDD[x][y] > minimal):
+               CDD[x][y] = minimal + 1
+
 def PacManPossibleMove():
    L = []
    x,y = PacManPos
@@ -332,11 +353,20 @@ def PlayOneTurn():
       if iteration % 2 == 0 :   IAPacman()
       else:                     IAGhosts()
    
-   if GUM[PacManPos[0]][PacManPos[1]] == 1: # si la pos du pacman est sur un pacgum
-      GUM[PacManPos[0]][PacManPos[1]] = 0
+   if GUM[PacManPos[0]][PacManPos[1]] == 1:  # si la pos du pacman est sur un pacgum
+      GUM[PacManPos[0]][PacManPos[1]] = 0    # on enleve le pacgum
       pacManScore = pacManScore + 100
-      ++
+      CDD[GUM == 0] = caseDuParcours # les cases vides dans GUM sont à distance max dans CDD
+
+
+
    Affiche(PacmanColor = "yellow", message = "Score : "+str(pacManScore))  
+   print(CDD)
+   print("")
+   print("")
+   print("")
+   updateCDD()
+
 
 
 ###########################################:
