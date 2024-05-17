@@ -48,6 +48,7 @@ CDD[TBL != 1] = caseDuParcours # les cases vides sont à distance max
 
 
 
+
 # placements des pacgums et des fantomes
 
 def PlacementsGUM():  # placements des pacgums
@@ -290,14 +291,6 @@ AfficherPage(0)
 #
 #########################################################################
 
-def updateCDD():
-   for x in range(LARGEUR):
-      for y in range(HAUTEUR):
-         if (TBL[x][y] == 0):
-            minimal = min(CDD[x][y-1], CDD[x][y+1], CDD[x+1][y], CDD[x-1][y])
-            if (CDD[x][y] > minimal):
-               CDD[x][y] = minimal + 1
-
 def PacManPossibleMove():
    L = []
    x,y = PacManPos
@@ -324,12 +317,12 @@ def IAPacman():
    PacManPos[1] += L[choix][1]
    
    # juste pour montrer comment on se sert de la fonction SetInfo1
-   for x in range(LARGEUR):
-      for y in range(HAUTEUR):
-         info = x
-         if   x % 3 == 1 : info = "+∞"
-         elif x % 3 == 2 : info = ""
-         SetInfo1(x,y,info)
+   #for x in range(LARGEUR):
+      #for y in range(HAUTEUR):
+         #info = x
+         #if   x % 3 == 1 : info = "+∞"
+         #elif x % 3 == 2 : info = ""
+         #SetInfo1(x,y,info)
    
  
    
@@ -341,6 +334,32 @@ def IAGhosts():
       F[0] += L[choix][0]
       F[1] += L[choix][1]
 
+def updateCDD():
+   for x in range(LARGEUR):
+      for y in range(HAUTEUR):
+         if (TBL[x][y] == 0):
+            neighbors = [CDD[x][y-1], CDD[x][y+1], CDD[x+1][y], CDD[x-1][y]]
+            minimal = min(neighbors)
+            if CDD[x][y] >= minimal and CDD[x][y] != 0: 
+               CDD[x][y] = minimal + 1
+               SetInfo1(x, y, minimal+1)
+   
+
+
+
+
+
+
+def PacmanEatGum():
+   global pacManScore
+   if GUM[PacManPos[0]][PacManPos[1]] == 1:  # si la pos du pacman est sur un pacgum
+      GUM[PacManPos[0]][PacManPos[1]] = 0    # on enleve le pacgum
+      pacManScore = pacManScore + 100
+      if CDD[PacManPos[0]][PacManPos[1]] == 0:
+         CDD[PacManPos[0]][PacManPos[1]] = caseDuParcours
+         updateCDD()
+
+
 #  Boucle principale de votre jeu appelée toutes les 500ms
 pacManScore = 0
 iteration = 0
@@ -349,25 +368,17 @@ def PlayOneTurn():
    global pacManScore
 
    if not PAUSE_FLAG : 
+      PacmanEatGum()
       iteration += 1
       if iteration % 2 == 0 :   IAPacman()
       else:                     IAGhosts()
-   
-   if GUM[PacManPos[0]][PacManPos[1]] == 1:  # si la pos du pacman est sur un pacgum
-      GUM[PacManPos[0]][PacManPos[1]] = 0    # on enleve le pacgum
-      pacManScore = pacManScore + 100
-      CDD[GUM == 0] = caseDuParcours # les cases vides dans GUM sont à distance max dans CDD
-
-
 
    Affiche(PacmanColor = "yellow", message = "Score : "+str(pacManScore))  
+
    print(CDD)
    print("")
    print("")
    print("")
-   updateCDD()
-
-
 
 ###########################################:
 #  demarrage de la fenetre - ne pas toucher
