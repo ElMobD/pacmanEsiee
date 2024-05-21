@@ -71,11 +71,13 @@ CDD[GUM == 1] = 0 # les pacgums sont à distance 0
 
 PacManPos = [5,5]
 
+
+
 Ghosts  = []
-Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "pink"  ]   )
-Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "orange"] )
-Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan"  ]   )
-Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red"   ]     )         
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "pink", (0, 0)])
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "orange", (0, 0)])
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan", (0, 0)])
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red", (0, 0)])         
 
 ##############################################################################
 #
@@ -302,10 +304,10 @@ def PacManPossibleMove():
    
 def GhostsPossibleMove(x,y):
    L = []
-   if ( TBL[x  ][y-1] == 2 ): L.append((0,-1))
-   if ( TBL[x  ][y+1] == 2 ): L.append((0, 1))
-   if ( TBL[x+1][y  ] == 2 ): L.append(( 1,0))
-   if ( TBL[x-1][y  ] == 2 ): L.append((-1,0))
+   if ( TBL[x  ][y-1] == 2 or TBL[x][y-1] == 0): L.append((0,-1))
+   if ( TBL[x  ][y+1] == 2 or TBL[x][y+1] == 0): L.append((0, 1))
+   if ( TBL[x+1][y] == 2 or TBL[x+1][y] == 0): L.append(( 1,0))
+   if ( TBL[x-1][y] == 2 or TBL[x-1][y] == 0): L.append((-1,0))
    return L
    
 def IAPacman():
@@ -315,24 +317,37 @@ def IAPacman():
    choix = random.randrange(len(L))
    PacManPos[0] += L[choix][0]
    PacManPos[1] += L[choix][1]
-   
-   # juste pour montrer comment on se sert de la fonction SetInfo1
-   #for x in range(LARGEUR):
-      #for y in range(HAUTEUR):
-         #info = x
-         #if   x % 3 == 1 : info = "+∞"
-         #elif x % 3 == 2 : info = ""
-         #SetInfo1(x,y,info)
-   
- 
+   #print(Ghosts) 
    
 def IAGhosts():
    #deplacement Fantome
    for F in Ghosts:
-      L = GhostsPossibleMove(F[0],F[1])
-      choix = random.randrange(len(L))
-      F[0] += L[choix][0]
-      F[1] += L[choix][1]
+      x, y = F[0], F[1]
+      dx, dy = F[3] # direction actuelle
+      L = GhostsPossibleMove(x,y)
+      
+      # Si le fantôme est dans un couloir, continuer dans la direction actuelle
+      if (dx, dy) in L and len(L) == 2:  # Le fantôme peut continuer et il est dans un couloir (2 directions possibles)
+            new_dx, new_dy = dx, dy
+      else:
+            # Choisir une nouvelle direction parmi les possibles, en excluant la direction opposée
+            directions_possibles = [(mx, my) for mx, my in L if (mx, my) != (-dx, -dy)]
+            
+            # Si la liste des directions possibles est vide, utiliser toutes les directions possibles
+            if not directions_possibles:
+                directions_possibles = L
+            
+            choix = random.randrange(len(directions_possibles))
+            new_dx, new_dy = directions_possibles[choix]
+
+      # Mettre à jour la position et la direction
+      F[0], F[1] = x + new_dx, y + new_dy
+      F[3] = (new_dx, new_dy)
+
+      #print(F)
+
+
+
 
 def updateCDD():
    for x in range(LARGEUR):
@@ -374,11 +389,9 @@ def PlayOneTurn():
       else:                     IAGhosts()
 
    Affiche(PacmanColor = "yellow", message = "Score : "+str(pacManScore))  
+   print("")
+   print("")
 
-   print(CDD)
-   print("")
-   print("")
-   print("")
 
 ###########################################:
 #  demarrage de la fenetre - ne pas toucher
