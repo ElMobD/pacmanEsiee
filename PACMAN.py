@@ -330,15 +330,10 @@ def IAGhosts():
       if (dx, dy) in L and len(L) == 2:  # Le fantôme peut continuer et il est dans un couloir (2 directions possibles)
             new_dx, new_dy = dx, dy
       else:
-            # Choisir une nouvelle direction parmi les possibles, en excluant la direction opposée
-            directions_possibles = [(mx, my) for mx, my in L if (mx, my) != (-dx, -dy)]
+            choix = random.randrange(len(L))
+            new_dx = L[choix][0]
+            new_dy = L[choix][1]
             
-            # Si la liste des directions possibles est vide, utiliser toutes les directions possibles
-            if not directions_possibles:
-                directions_possibles = L
-            
-            choix = random.randrange(len(directions_possibles))
-            new_dx, new_dy = directions_possibles[choix]
 
       # Mettre à jour la position et la direction
       F[0], F[1] = x + new_dx, y + new_dy
