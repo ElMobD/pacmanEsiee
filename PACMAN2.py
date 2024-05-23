@@ -39,21 +39,6 @@ TBL = CreateArray([
 HAUTEUR = TBL.shape [1]      
 LARGEUR = TBL.shape [0]  
 
-caseDuParcours = np.count_nonzero(TBL != 1)
-
-
-# Carte des distances des pacgums
-CDD = np.zeros(TBL.shape,dtype=np.int32)
-CDD[TBL == 1] = 1000 # les murs sont à distance infinie
-CDD[TBL != 1] = caseDuParcours # les cases vides sont à distance max
-
-# Carte des distancess des fantomes
-CDDG = np.zeros(TBL.shape,dtype=np.int32)
-CDDG[TBL == 1] = 1000 # les murs sont à distance infinie
-CDDG[TBL != 1] = caseDuParcours # les maisons des fantomes sont à distance infinie
-
-
-
 # placements des pacgums et des fantomes
 
 def PlacementsGUM():  # placements des pacgums
@@ -63,27 +48,129 @@ def PlacementsGUM():  # placements des pacgums
       for y in range(HAUTEUR):
          if ( TBL[x][y] == 0):
             GUM[x][y] = 1
-         elif ( TBL[x][y] == 1):
-            GUM[x][y] = 5
    return GUM
             
 GUM = PlacementsGUM()   
-CDD[GUM == 1] = 0 # les pacgums sont à distance 0
-
-
+   
 
       
 
 PacManPos = [5,5]
 
-
 Ghosts  = []
-#Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "pink", (0, 0)])
-#Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "orange", (0, 0)])
-#Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan", (0, 0)])
-#Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red", (0, 0)])
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "pink", (0,0)])
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "orange", (0,0)])
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan", (0,0)])
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red", (0,0)])         
+
+#### Code ajouté
+
+gameOver = False
+pacManScore = 0
+CDD = np.zeros(TBL.shape, dtype=np.int32) # carte des distances
+CDDG = np.zeros(TBL.shape, dtype=np.int32) # carte des distances des fantômes
+GHOST = np.zeros(TBL.shape, dtype=np.int32) # carte des positions des fantomes
+grandeValeur = 1000
+nbrCases = LARGEUR * HAUTEUR
+directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+
+### CARTE DES DISTANCES
+def distance():
+    global CDD, grandeValeur, nbrCases
+
+    for x in range(LARGEUR):
+        for y in range(HAUTEUR):
+
+            if TBL[x][y] == 1:
+                CDD[x][y] = grandeValeur
+            elif GUM[x][y] == 1:
+                CDD[x][y] = 0
+            else:
+                CDD[x][y] = nbrCases
+
+    return CDD
+### CARTE DES DISTANCES
 
 
+### CARTE DES DISTANCES DES FANTÔMES
+def distanceGhosts():
+    global CDDG, GHOST
+
+    GHOST = np.zeros(TBL.shape, dtype=np.int32)
+    for G in Ghosts:
+        GHOST[G[0]][G[1]] = 1
+
+    for x in range(LARGEUR):
+        for y in range(HAUTEUR):
+            if GHOST[x][y] == 1:
+                CDDG[x][y] = 0     
+            elif TBL[x][y] == 1 or TBL[x][y] == 2:
+                CDDG[x][y] = grandeValeur
+            else:
+                CDDG[x][y] = nbrCases
+    return CDDG
+### CARTE DES DISTANCES DES FANTÔMES
+
+def updateDistance():
+    global CDD, directions, grandeValeur, nbrCases
+
+    isUpdated = True
+
+    while isUpdated:
+        isUpdated = False
+        for x in range(1, LARGEUR-1):
+            for y in range(1, HAUTEUR-1):
+                if CDD[x][y] != grandeValeur:
+                    neighbours = []
+                    for dx, dy in directions:
+                        nx = x + dx
+                        ny = y + dy
+                        if 0 <= nx < LARGEUR and 0 <= ny < HAUTEUR:
+                            neighbours.append((nx, ny))
+
+                    neighboursValue = []
+
+                    for nx, ny in neighbours:
+                        neighboursValue.append(CDD[nx][ny])
+
+                    minValue = min(neighboursValue)
+
+                    if CDD[x][y] > minValue + 1:
+                        CDD[x][y] = minValue + 1
+                        isUpdated = True
+                        
+                    #SetInfo1(x, y, CDD[x][y])
+
+def updateDistanceGhosts():
+    global CDDG, directions, grandeValeur
+    isUpdated = True
+    while isUpdated:
+        isUpdated = False
+        for x in range(1, LARGEUR-1):
+            for y in range(1, HAUTEUR-1):
+                if TBL[x][y] == 0:
+                    neighbours = []
+                    for dx, dy in directions:
+                        nx = x + dx
+                        ny = y + dy
+                        if 0 <= nx < LARGEUR and 0 <= ny < HAUTEUR:
+                            neighbours.append((nx, ny))
+
+                    neighboursValue = []
+
+                    for nx, ny in neighbours:
+                        neighboursValue.append(CDDG[nx][ny])
+
+                    minValue = min(neighboursValue)
+
+                    if CDDG[x][y] > minValue + 1:
+                        CDDG[x][y] = minValue + 1
+                        isUpdated = True
+
+                    #SetInfo2(x, y, CDDG[x][y])
+
+CDD = distance()
+CDDG = distanceGhosts()
 
 
 ##############################################################################
@@ -299,13 +386,20 @@ AfficherPage(0)
 #  Partie III :   Gestion de partie   -   placez votre code dans cette section
 #
 #########################################################################
+def PacmanEatGum():
+   global pacManScore, nbrCases, CDD
+   if GUM[PacManPos[0]][PacManPos[1]] == 1:  # si la pos du pacman est sur un pacgum
+      GUM[PacManPos[0]][PacManPos[1]] = 0    # on enleve le pacgum
+      CDD[PacManPos[0]][PacManPos[1]] = nbrCases
+      pacManScore = pacManScore + 100
+      CDD = distance()
+
 def Collision():
    global PacManPos, Ghosts
-   for ghost in Ghosts:
-      if PacManPos[0] == ghost[0] and PacManPos[1] == ghost[1]:
+   for g in Ghosts:
+      if PacManPos[0] == g[0] and PacManPos[1] == g[1]:
          return True
    return False
-   
 
 def PacManPossibleMove():
    L = []
@@ -320,38 +414,37 @@ def GhostsPossibleMove(x,y):
    L = []
    if ( TBL[x  ][y-1] == 2 or TBL[x][y-1] == 0): L.append((0,-1))
    if ( TBL[x  ][y+1] == 2 or TBL[x][y+1] == 0): L.append((0, 1))
-   if ( TBL[x+1][y] == 2 or TBL[x+1][y] == 0): L.append(( 1,0))
-   if ( TBL[x-1][y] == 2 or TBL[x-1][y] == 0): L.append((-1,0))
+   if ( TBL[x+1][y  ] == 2 or TBL[x+1][y] == 0): L.append(( 1,0))
+   if ( TBL[x-1][y  ] == 2 or TBL[x-1][y] == 0): L.append((-1,0))
    return L
    
 def IAPacman():
-   global PacManPos, Ghosts, CDD
-   #deplacement Pacman
-   L = PacManPossibleMove()
-   min_distance = float('inf')
-   next_move = None
-   for move in L:
-      new_x = PacManPos[0] + move[0]
-      new_y = PacManPos[1] + move[1]
-      if CDD[new_x][new_y] < min_distance:
-         min_distance = CDD[new_x][new_y]
-         next_move = move
-   if next_move:
-      PacManPos[0] += next_move[0]
-      PacManPos[1] += next_move[1]
-   return Collision()
+    global PacManPos, Ghosts, CDD
+    #deplacement Pacman
+    L = PacManPossibleMove()
+    min_distance = nbrCases
+    next_move = None
+    for move in L:
+        new_x = PacManPos[0] + move[0]
+        new_y = PacManPos[1] + move[1]
+        if CDD[new_x][new_y] < min_distance:
+            min_distance = CDD[new_x][new_y]
+            next_move = move
+    if next_move:
+        PacManPos[0] += next_move[0]
+        PacManPos[1] += next_move[1]
+
+    PacmanEatGum()
+    updateDistance()
+    return Collision()
+ 
    
-
-
-
-   µ
 def IAGhosts():
    #deplacement Fantome
    for F in Ghosts:
       x, y = F[0], F[1]
       dx, dy = F[3] # direction actuelle
       L = GhostsPossibleMove(x,y)
-      
       # Si le fantôme est dans un couloir, continuer dans la direction actuelle
       if (dx, dy) in L and len(L) == 2:  # Le fantôme peut continuer et il est dans un couloir (2 directions possibles)
             new_dx, new_dy = dx, dy
@@ -364,106 +457,32 @@ def IAGhosts():
       # Mettre à jour la position et la direction
       F[0], F[1] = x + new_dx, y + new_dy
       F[3] = (new_dx, new_dy)
-      #print(F)
-   return Collision()
       
-"""
-def updateCDD():
-   for x in range(LARGEUR):
-      for y in range(HAUTEUR):
-         if (TBL[x][y] == 0):
-            neighbors = [CDD[x][y-1], CDD[x][y+1], CDD[x+1][y], CDD[x-1][y]]
-            minimal = min(neighbors)
-            if CDD[x][y] != 0: 
-               CDD[x][y] = minimal + 1
-            SetInfo1(x, y, minimal+1)
-"""
+      distanceGhosts()
+      updateDistanceGhosts()
+   return Collision()
+  
+ 
 
-G = 999  # une valeur G très grande
-M = LARGEUR * HAUTEUR 
-axes = [(1, 0), (0, 1), (-1, 0), (0, -1)]
-
-def updateCDD():
-   global CDD, axes, G, M
-
-   update = True
-
-   while update:
-      update = False
-      for y in range(1, HAUTEUR-1):
-         for x in range(1, LARGEUR-1):
-               if CDD[x][y] != G:
-                  voisins = []
-                  for dx, dy in axes:
-                     nx = x + dx
-                     ny = y + dy
-                     if 0 <= nx < LARGEUR and 0 <= ny < HAUTEUR:
-                        voisins.append((nx, ny))
-
-                  voisinsVal = []
-
-                  for nx, ny in voisins:
-                        voisinsVal.append(CDD[nx][ny])
-                  
-                  min_val = min(voisinsVal)
-
-                  if CDD[x][y] > min_val + 1:
-                     CDD[x][y] = min_val + 1
-                     anyUpdate = True
-                  SetInfo1(x, y, CDD[x][y])
-               
-"""
-def updateCDDG():
-   for i in range(LARGEUR):
-      for j in range(HAUTEUR):
-"""        
-            
-
-   
-
-
-
-
-def PacmanEatGum():
-   global pacManScore
-   if GUM[PacManPos[0]][PacManPos[1]] == 1:  # si la pos du pacman est sur un pacgum
-      GUM[PacManPos[0]][PacManPos[1]] = 0    # on enleve le pacgum
-      CDD[PacManPos[0]][PacManPos[1]] = caseDuParcours
-      pacManScore = pacManScore + 100
-
-
+ 
 #  Boucle principale de votre jeu appelée toutes les 500ms
-pacManScore = 0
-iteration = 0
-gameOver = False
-def PlayOneTurn():
-   global iteration
-   global pacManScore
-   global gameOver
 
+iteration = 0
+def PlayOneTurn():
+   global iteration, PAUSE_FLAG, pacManScore, gameOver
+   
    if not PAUSE_FLAG and not gameOver: 
-      PacmanEatGum()
-      updateCDD()
-      #updateCDDG()
       iteration += 1
       if iteration % 2 == 0 :   
-         if IAPacman(): gameOver = True
+         if IAPacman() : gameOver = True
       else:                     
-         if IAGhosts(): gameOver = True
-
+         if IAGhosts() : gameOver = True
+   
    Affiche(PacmanColor = "yellow", message = "Score : "+str(pacManScore))  
    print("")
-   print("")
-   print(CDD)
-
+   print("'")
+ 
 ###########################################:
 #  demarrage de la fenetre - ne pas toucher
 
 Window.mainloop()
-
- 
-   
-   
-    
-   
-   
