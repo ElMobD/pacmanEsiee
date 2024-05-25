@@ -48,6 +48,13 @@ def PlacementsGUM():  # placements des pacgums
       for y in range(HAUTEUR):
          if ( TBL[x][y] == 0):
             GUM[x][y] = 1
+
+   GUM[1][1] = 2
+   GUM[LARGEUR-2][1] = 2
+   GUM[1][HAUTEUR-2] = 2
+   GUM[LARGEUR-2][HAUTEUR-2] = 2
+
+
    return GUM
             
 GUM = PlacementsGUM()   
@@ -73,6 +80,8 @@ GHOST = np.zeros(TBL.shape, dtype=np.int32) # carte des positions des fantomes
 grandeValeur = 1000
 nbrCases = LARGEUR * HAUTEUR
 directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+chase_mode = False
+chase_time = 0
 
 ### CARTE DES DISTANCES
 def distance():
@@ -83,7 +92,7 @@ def distance():
 
             if TBL[x][y] == 1:
                 CDD[x][y] = grandeValeur
-            elif GUM[x][y] == 1:
+            elif GUM[x][y] == 1 or GUM[x][y] == 2:
                 CDD[x][y] = 0
             else:
                 CDD[x][y] = nbrCases
@@ -139,7 +148,7 @@ def updateDistance():
                         CDD[x][y] = minValue + 1
                         isUpdated = True
                         
-                    #SetInfo1(x, y, CDD[x][y])
+                    SetInfo1(x, y, CDD[x][y])
 
 def updateDistanceGhosts():
     global CDDG, directions, grandeValeur
@@ -167,7 +176,7 @@ def updateDistanceGhosts():
                         CDDG[x][y] = minValue + 1
                         isUpdated = True
 
-                    SetInfo2(x, y, CDDG[x][y])
+                    #SetInfo2(x, y, CDDG[x][y])
 
 CDD = distance()
 CDDG = distanceGhosts()
@@ -322,6 +331,11 @@ def Affiche(PacmanColor,message):
             yy = To(y)
             e = 5
             canvas.create_oval(xx-e,yy-e,xx+e,yy+e,fill="orange")
+         elif ( GUM[x][y] == 2):
+            xx = To(x) 
+            yy = To(y)
+            e = 6
+            canvas.create_oval(xx-e,yy-e,xx+e,yy+e,fill="green")
             
    #extra info
    for x in range(LARGEUR):
@@ -387,12 +401,19 @@ AfficherPage(0)
 #
 #########################################################################
 def PacmanEatGum():
-   global pacManScore, nbrCases, CDD
-   if GUM[PacManPos[0]][PacManPos[1]] == 1:  # si la pos du pacman est sur un pacgum
-      GUM[PacManPos[0]][PacManPos[1]] = 0    # on enleve le pacgum
-      CDD[PacManPos[0]][PacManPos[1]] = nbrCases
-      pacManScore = pacManScore + 100
-      CDD = distance()
+   global pacManScore, nbrCases, CDD, chase_mode, chase_time
+   if GUM[PacManPos[0]][PacManPos[1]] == 1 or GUM[PacManPos[0]][PacManPos[1]] == 2:  # si la pos du pacman est sur un pacgum
+        pacgumEaten = GUM[PacManPos[0]][PacManPos[1]]
+        GUM[PacManPos[0]][PacManPos[1]] = 0    # on enleve le pacgum
+        CDD[PacManPos[0]][PacManPos[1]] = nbrCases
+        if pacgumEaten == 1: pacManScore = pacManScore + 100
+        else: 
+            pacManScore = pacManScore + 200
+            chase_mode = True
+            chase_time = 16
+
+        CDD = distance()
+       
 
 def Collision():
    global PacManPos, Ghosts
@@ -419,8 +440,9 @@ def GhostsPossibleMove(x,y):
    return L
    
 def IAPacman():
-    global PacManPos, Ghosts, CDD, CDDG, nbrCases
-    #deplacement Pacman
+    global PacManPos, Ghosts, CDD, CDDG, nbrCases, chase_mode, chase_time
+
+    #deplacement Pacman vers les pacgums
     L = PacManPossibleMove()
     min_distance = nbrCases
     next_move = None
@@ -431,8 +453,8 @@ def IAPacman():
             min_distance = CDD[new_x][new_y]
             next_move = move
 
-
-    if CDDG[PacManPos[0]][PacManPos[1]] < 4: # si un fantôme est proche
+    # si un fantôme est proche
+    if CDDG[PacManPos[0]][PacManPos[1]] < 4: 
         next_move = None
         min_distance = CDDG[PacManPos[0]][PacManPos[1]]
         for move in L:
@@ -442,6 +464,21 @@ def IAPacman():
                 min_distance = CDDG[new_x][new_y]
                 next_move = move
 
+    print(chase_mode, chase_time)
+
+    # si le mode chasse est activé
+    if chase_time and chase_mode > 0: 
+        chase_time -= 1
+        next_move = None
+        min_distance = CDDG[PacManPos[0]][PacManPos[1]]
+        for move in L:
+            new_x = PacManPos[0] + move[0]
+            new_y = PacManPos[1] + move[1]
+            if CDDG[new_x][new_y] < min_distance:
+                min_distance = CDDG[new_x][new_y]
+                next_move = move
+    else:
+        chase_mode = False
 
     if next_move: # Faire avancer le Pacman
         PacManPos[0] += next_move[0]
