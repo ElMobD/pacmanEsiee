@@ -401,8 +401,8 @@ AfficherPage(0)
 #
 #########################################################################
 def PacmanEatGum():
-   global pacManScore, nbrCases, CDD, chase_mode, chase_time
-   if GUM[PacManPos[0]][PacManPos[1]] == 1 or GUM[PacManPos[0]][PacManPos[1]] == 2:  # si la pos du pacman est sur un pacgum
+    global pacManScore, nbrCases, CDD, chase_mode, chase_time
+    if not chase_mode and (GUM[PacManPos[0]][PacManPos[1]] == 1 or GUM[PacManPos[0]][PacManPos[1]] == 2):  # si la pos du pacman est sur un pacgum
         pacgumEaten = GUM[PacManPos[0]][PacManPos[1]]
         GUM[PacManPos[0]][PacManPos[1]] = 0    # on enleve le pacgum
         CDD[PacManPos[0]][PacManPos[1]] = nbrCases
@@ -411,14 +411,21 @@ def PacmanEatGum():
             pacManScore = pacManScore + 200
             chase_mode = True
             chase_time = 16
+    else:
+        for G in Ghosts:
+            if chase_mode and (PacManPos[0] == G[0] and PacManPos[1] == G[1]):
+                print("Pacman a mangé un fantôme !")
+                G[0] = LARGEUR // 2
+                G[1] = HAUTEUR // 2
+                pacManScore = pacManScore + 2000
 
-        CDD = distance()
+    CDD = distance()
        
 
 def Collision():
-   global PacManPos, Ghosts
+   global PacManPos, Ghosts, chase_mode
    for g in Ghosts:
-      if PacManPos[0] == g[0] and PacManPos[1] == g[1]:
+      if not chase_mode and (PacManPos[0] == g[0] and PacManPos[1] == g[1]):
          return True
    return False
 
