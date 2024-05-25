@@ -148,7 +148,7 @@ def updateDistance():
                         CDD[x][y] = minValue + 1
                         isUpdated = True
                         
-                    SetInfo1(x, y, CDD[x][y])
+                    #SetInfo1(x, y, CDD[x][y])
 
 def updateDistanceGhosts():
     global CDDG, directions, grandeValeur
@@ -176,7 +176,7 @@ def updateDistanceGhosts():
                         CDDG[x][y] = minValue + 1
                         isUpdated = True
 
-                    #SetInfo2(x, y, CDDG[x][y])
+                    SetInfo2(x, y, CDDG[x][y])
 
 CDD = distance()
 CDDG = distanceGhosts()
@@ -402,7 +402,7 @@ AfficherPage(0)
 #########################################################################
 def PacmanEatGum():
     global pacManScore, nbrCases, CDD, chase_mode, chase_time
-    if not chase_mode and (GUM[PacManPos[0]][PacManPos[1]] == 1 or GUM[PacManPos[0]][PacManPos[1]] == 2):  # si la pos du pacman est sur un pacgum
+    if GUM[PacManPos[0]][PacManPos[1]] == 1 or GUM[PacManPos[0]][PacManPos[1]] == 2:  # si la pos du pacman est sur un pacgum
         pacgumEaten = GUM[PacManPos[0]][PacManPos[1]]
         GUM[PacManPos[0]][PacManPos[1]] = 0    # on enleve le pacgum
         CDD[PacManPos[0]][PacManPos[1]] = nbrCases
@@ -411,10 +411,9 @@ def PacmanEatGum():
             pacManScore = pacManScore + 200
             chase_mode = True
             chase_time = 16
-    else:
+    if chase_mode:
         for G in Ghosts:
             if chase_mode and (PacManPos[0] == G[0] and PacManPos[1] == G[1]):
-                print("Pacman a mangé un fantôme !")
                 G[0] = LARGEUR // 2
                 G[1] = HAUTEUR // 2
                 pacManScore = pacManScore + 2000
@@ -471,7 +470,7 @@ def IAPacman():
                 min_distance = CDDG[new_x][new_y]
                 next_move = move
 
-    print(chase_mode, chase_time)
+    #print(chase_mode, chase_time)
 
     # si le mode chasse est activé
     if chase_time and chase_mode > 0: 
@@ -526,18 +525,21 @@ def IAGhosts():
 
 iteration = 0
 def PlayOneTurn():
-   global iteration, PAUSE_FLAG, pacManScore, gameOver
-   
-   if not PAUSE_FLAG and not gameOver: 
-      iteration += 1
-      if iteration % 2 == 0 :   
-         if IAPacman() : gameOver = True
-      else:                     
-         if IAGhosts() : gameOver = True
-   
-   Affiche(PacmanColor = "yellow", message = "Score : "+str(pacManScore))  
-   print("")
-   print("")
+    global iteration, PAUSE_FLAG, pacManScore, gameOver, chase_mode
+    
+    if not PAUSE_FLAG and not gameOver: 
+        iteration += 1
+        if iteration % 2 == 0 :   
+            if IAPacman() : gameOver = True
+        else:                     
+            if IAGhosts() : gameOver = True
+    
+    if chase_mode: color = "green"
+    else : color = "yellow"
+
+    Affiche(PacmanColor = color, message = "Score : "+str(pacManScore))  
+    print("")
+    print("")
  
 ###########################################:
 #  demarrage de la fenetre - ne pas toucher
