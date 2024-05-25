@@ -167,7 +167,7 @@ def updateDistanceGhosts():
                         CDDG[x][y] = minValue + 1
                         isUpdated = True
 
-                    #SetInfo2(x, y, CDDG[x][y])
+                    SetInfo2(x, y, CDDG[x][y])
 
 CDD = distance()
 CDDG = distanceGhosts()
@@ -419,7 +419,7 @@ def GhostsPossibleMove(x,y):
    return L
    
 def IAPacman():
-    global PacManPos, Ghosts, CDD
+    global PacManPos, Ghosts, CDD, CDDG, nbrCases
     #deplacement Pacman
     L = PacManPossibleMove()
     min_distance = nbrCases
@@ -430,7 +430,20 @@ def IAPacman():
         if CDD[new_x][new_y] < min_distance:
             min_distance = CDD[new_x][new_y]
             next_move = move
-    if next_move:
+
+
+    if CDDG[PacManPos[0]][PacManPos[1]] < 4: # si un fantôme est proche
+        next_move = None
+        min_distance = CDDG[PacManPos[0]][PacManPos[1]]
+        for move in L:
+            new_x = PacManPos[0] + move[0]
+            new_y = PacManPos[1] + move[1]
+            if CDDG[new_x][new_y] > min_distance:
+                min_distance = CDDG[new_x][new_y]
+                next_move = move
+
+
+    if next_move: # Faire avancer le Pacman
         PacManPos[0] += next_move[0]
         PacManPos[1] += next_move[1]
 
@@ -480,7 +493,7 @@ def PlayOneTurn():
    
    Affiche(PacmanColor = "yellow", message = "Score : "+str(pacManScore))  
    print("")
-   print("'")
+   print("")
  
 ###########################################:
 #  demarrage de la fenetre - ne pas toucher
